@@ -1,0 +1,210 @@
+﻿using System;
+
+class Program
+{
+    static void Main()
+    {
+        Console.WriteLine("Digite 1 PF ou 2 MEI ou 3 Simples:");
+        int Regime = int.Parse(Console.ReadLine());
+
+        // ================= PF =================
+        if (Regime == 1)
+        {
+            if (Regime == 1)
+            {
+                Console.WriteLine("quanto você ganha anualmente?");
+                int valor = int.Parse(Console.ReadLine());
+
+                if (valor <= 60000)
+                {
+                    Console.WriteLine("isento");
+                }
+                else if (valor <= 88200)
+                {
+                    Console.WriteLine($"Pós imposto: {valor - 7286}");
+                }
+                else if (valor >= 116667)
+                {
+                    Console.WriteLine($"Pós imposto: {valor - 7286}");
+                }
+                else if (valor >= 116667 + 28433)
+                {
+                    Console.WriteLine($"Pós imposto: {valor * 7.5 / 100}");
+                }
+                else if (valor >= 116667 + 28433 + 10964)
+                {
+                    Console.WriteLine($"Pós imposto: {valor * 15 / 100}");
+                }
+                else if (valor >= 116667 + 28433 + 10964)
+                {
+                    Console.WriteLine($"Pós imposto: {valor * 22.5 / 100}");
+                }
+                else if (valor > 116667 + 28433 + 10964)
+                {
+                    Console.WriteLine($"Pós imposto: {valor * 27.5 / 100}");
+                }
+                else
+                {
+                    Console.WriteLine("error");
+                }
+            }
+        }
+
+        // ================= MEI =================
+        else if (Regime == 2)
+        {
+            Console.WriteLine("Digite 1 comercio,2 servico,3 ambos,4 caminhoneiro:");
+            int Regime_MEI = int.Parse(Console.ReadLine());
+
+            if (Regime_MEI == 1)
+            {
+                Console.WriteLine("quanto você ganha anualmente?");
+                int valor = int.Parse(Console.ReadLine());
+
+                if (valor <= 81000)
+                {
+                    Console.WriteLine($"Pós imposto: {81000 - 82}");
+                }
+                else if (Regime_MEI == 2) // bug clássico 😈
+                {
+                    Console.WriteLine($"Pós imposto: {81000 - 86}");
+                }
+                else if (Regime_MEI == 3)
+                {
+                    Console.WriteLine($"Pós imposto: {81000 - 87}");
+                }
+                else if (Regime_MEI == 4)
+                {
+                    Console.WriteLine($"Pós imposto: {81000 - 200}");
+                }
+                else if (valor > 81000)
+                {
+                    Console.WriteLine("Ultrapassou o limite do MEI");
+                }
+                else
+                {
+                    Console.WriteLine("error");
+                }
+            }
+            else
+            {
+                Console.WriteLine("error");
+            }
+        }
+
+        // ================= SIMPLES =================
+        else if (Regime == 3)
+        {
+            Console.WriteLine("Qual anexo (1 a 5):");
+            int CNAE = int.Parse(Console.ReadLine());
+
+            Console.WriteLine("quanto você ganha?");
+            int valor = int.Parse(Console.ReadLine());
+
+            // ===== ANEXO 1 =====
+            if (CNAE == 1)
+            {
+                if (valor <= 180000)
+                    Console.WriteLine(valor - valor * 4 / 100);
+                else if (valor <= 360000)
+                    Console.WriteLine(valor - valor * 7.8 / 100);
+                else if (valor <= 720000)
+                    Console.WriteLine(valor - valor * 10 / 100);
+                else if (valor <= 1800000)
+                    Console.WriteLine(valor - valor * 11.2 / 100);
+                else if (valor <= 3600000)
+                    Console.WriteLine(valor - valor * 14.7 / 100);
+                else if (valor <= 4800000)
+                    Console.WriteLine(valor - valor * 30 / 100);
+                else
+                    Console.WriteLine("error");
+            }
+
+            // ===== ANEXO 2 =====
+            else if (CNAE == 2)
+            {
+                if (valor <= 180000)
+                    Console.WriteLine(valor - valor * 4.5 / 100);
+                else if (valor <= 360000)
+                    Console.WriteLine(valor - valor * 7.8 / 100);
+                else if (valor <= 720000)
+                    Console.WriteLine(valor - valor * 10 / 100);
+                else if (valor <= 1800000)
+                    Console.WriteLine(valor - valor * 11.2 / 100);
+                else if (valor <= 3600000)
+                    Console.WriteLine(valor - valor * 14.7 / 100);
+                else if (valor <= 4800000)
+                    Console.WriteLine(valor - valor * 30 / 100);
+                else
+                    Console.WriteLine("error");
+            }
+
+            // ===== ANEXO 3 =====
+            else if (CNAE == 3)
+            {
+                if (valor <= 180000)
+                    Console.WriteLine(valor - valor * 6 / 100);
+                else if (valor <= 360000)
+                    Console.WriteLine(valor - valor * 11.2 / 100);
+                else if (valor <= 720000)
+                    Console.WriteLine(valor - valor * 13.5 / 100);
+                else if (valor <= 1800000)
+                    Console.WriteLine(valor - valor * 16 / 100);
+                else if (valor <= 3600000)
+                    Console.WriteLine(valor - valor * 21 / 100);
+                else if (valor <= 4800000)
+                    Console.WriteLine(valor - valor * 33 / 100);
+                else
+                    Console.WriteLine("error");
+            }
+
+            // ===== ANEXO 4 =====
+            else if (CNAE == 4)
+            {
+                if (valor <= 180000)
+                    Console.WriteLine(valor - valor * 4.5 / 100);
+                else if (valor <= 360000)
+                    Console.WriteLine(valor - valor * 9 / 100);
+                else if (valor <= 720000)
+                    Console.WriteLine(valor - valor * 10.2 / 100);
+                else if (valor <= 1800000)
+                    Console.WriteLine(valor - valor * 14 / 100);
+                else if (valor <= 3600000)
+                    Console.WriteLine(valor - valor * 22 / 100);
+                else if (valor <= 4800000)
+                    Console.WriteLine(valor - valor * 33 / 100);
+                else
+                    Console.WriteLine("error");
+            }
+
+            // ===== ANEXO 5 =====
+            else if (CNAE == 5)
+            {
+                if (valor <= 180000)
+                    Console.WriteLine(valor - valor * 15.5 / 100);
+                else if (valor <= 360000)
+                    Console.WriteLine(valor - valor * 18 / 100);
+                else if (valor <= 720000)
+                    Console.WriteLine(valor - valor * 19.5 / 100);
+                else if (valor <= 1800000)
+                    Console.WriteLine(valor - valor * 20.5 / 100);
+                else if (valor <= 3600000)
+                    Console.WriteLine(valor - valor * 23 / 100);
+                else if (valor <= 4800000)
+                    Console.WriteLine(valor - valor * 30.5 / 100);
+                else
+                    Console.WriteLine("error");
+            }
+
+            else
+            {
+                Console.WriteLine("error");
+            }
+        }
+
+        else
+        {
+            Console.WriteLine("error");
+        }
+    }
+}

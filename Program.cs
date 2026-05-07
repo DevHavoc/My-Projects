@@ -28,13 +28,24 @@ namespace Negocio
         public int Id { get; set; }
         public string Nome { get; set; }
         public decimal Preco { get; set; }
+        public int Estoque { get; set; }
+
+        public void ReduzirEstoque(int quantidade)
+        {
+            if (quantidade <= 0)
+                throw new ExceptionVenda("Quantidade inválida!");
+
+            if (quantidade > Estoque)
+                throw new ExceptionVenda("Estoque insuficiente!");
+
+            Estoque -= quantidade;
+        }
     }
 
     public class Venda
     {
         public Produto Produto { get; set; }
         public int Quantidade { get; set; }
-
         public decimal Total => Produto.Preco * Quantidade;
     }
 
@@ -44,6 +55,8 @@ namespace Negocio
         {
             if (venda.Quantidade <= 0)
                 throw new ExceptionVenda("Quantidade inválida!");
+
+            venda.Produto.ReduzirEstoque(venda.Quantidade);
 
             empresa.RegistrarVenda(venda.Total);
 
@@ -64,16 +77,16 @@ namespace Negocio
 
             List<Produto> produtos = new List<Produto>()
             {
-                new Produto { Id = 1, Nome = "Machine1", Preco = 7400m },
-                new Produto { Id = 2, Nome = "Machine2", Preco = 5000m },
-                new Produto { Id = 3, Nome = "Machine3", Preco = 9000m }
+                new Produto { Id = 1, Nome = "Machine1", Preco = 7400m, Estoque = 10 },
+                new Produto { Id = 2, Nome = "Machine2", Preco = 5000m, Estoque = 5 },
+                new Produto { Id = 3, Nome = "Machine3", Preco = 9000m, Estoque = 8 }
             };
 
             Console.WriteLine("=== PRODUTOS ===");
 
             foreach (var produto in produtos)
             {
-                Console.WriteLine($"{produto.Id} - {produto.Nome} - R${produto.Preco}");
+                Console.WriteLine($"{produto.Id} - {produto.Nome} - R${produto.Preco} - Estoque: {produto.Estoque}");
             }
 
             try

@@ -1,197 +1,228 @@
+## Esse trabalho ja esta incluindo aproximadamente a nova regra de 2026 pra amortizaçao de IR de PF
+## Os calculos serao feitos em anual no fim das contas
+## Estamos considerando numeros aproximados e sem centavos para facilitar os calculos
+## O codigo agora inclui uma versao mais completa, com deduçoes para Pessoa Fisica
+##Algumas categorias de MEI foram simplificadas,mas os valores de contribuicao estao aproximados
 
-##Esse trabalho ja esta incluindo a nova regra de 2026 pra amortização de IR de PF
-##os calculos serao feitos tudo em anual no fim das contas
-##estamos considerando apenas inteiros sem centavos para facilitar os calculos
-##não estamos considerando o desconto de dependentes e outras deduções
-Regime = int(input("Digite 1 para regime de Pessoa fisica ou 2 para MEI ou 3 para Simples nacional: "))
+def ask_float(prompt):
+    while True:
+        try:
+            return float(input(prompt).replace(",", "."))
+        except ValueError:
+            print("Entrada invalida. Digite um numero valido.")
 
-if Regime == 1:
 
- if Regime == 1:
-    valor_bruto_anual = int(input("quanto você ganha anualmente?: "))
-    if valor_bruto_anual <= 60000:
-        print("isento")
-    elif valor_bruto_anual <= 88200:
-        print(f"Seu valor pós impostos anual é {valor_bruto_anual - 7286}")
-    elif valor_bruto_anual >= 116.667:
-         print(f"Seu valor pós impostos anual é {valor_bruto_anual - 7286}")
-    elif valor_bruto_anual >=116.667+28.433:
-        print(f"Seu valor pós impostos anual é {valor_bruto_anual*7.5/100}")
-    elif valor_bruto_anual >= 116.667+28.433+10.964:
-        print(f"Seu valor pós impostos anual é {valor_bruto_anual*15/100}")
-    elif valor_bruto_anual >= 116.667+28.433+10.964:
-        print(f"Seu valor pós impostos anual é {valor_bruto_anual*22.5/100}")
-    elif valor_bruto_anual > 116.667+28.433+10.964:
-        print(f"Seu valor pós impostos anual é {valor_bruto_anual*27.5/100}")
+def ask_int(prompt, min_value=None, max_value=None):
+    while True:
+        try:
+            value = int(input(prompt))
+            if min_value is not None and value < min_value:
+                print(f"Digite um valor maior ou igual a {min_value}.")
+                continue
+            if max_value is not None and value > max_value:
+                print(f"Digite um valor menor ou igual a {max_value}.")
+                continue
+            return value
+        except ValueError:
+            print("Entrada invalida. Digite um numero inteiro.")
+
+
+def calc_irpf(valor_bruto, previdencia, dependentes, pensao_alimenticia):
+    # Deduçao por dependente (aproximadamente , considerando o valor de 2024)
+    deducao_dependente = dependentes * 2754.0 
+    deducoes = previdencia + deducao_dependente + pensao_alimenticia
+    base_calculo = max(0.0, valor_bruto - deducoes)
+
+    if base_calculo <= 60000:
+        aliquota = 0.0
+        deducao = 0.0
+    elif base_calculo <= 88200:
+        aliquota = 0.075
+        deducao = 7286.0
+    elif base_calculo <= 116667:
+        aliquota = 0.15
+        deducao = 8968.0
+    elif base_calculo <= 145100:
+        aliquota = 0.225
+        deducao = 17420.0
     else:
-        print("error")
-elif Regime == 2:
-    Regime_MEI = int(input("Digite 1 se você atua com comércio e industrias ,2 para prestação de serviços, 3 para comércio e prestação de serviços ,4 para caminhoneiros : "))
-    if Regime_MEI == 1:
-        valor_bruto_anual = int(input("quanto você ganha anualmente?: "))
-        if valor_bruto_anual <= 81000:
-            print(f"Você ira pagar uma aliquota de 82 fixa: {81000 - 82}")
-        elif Regime_MEI == 2:
-            print(f"Você ira pagar uma aliquota de 86 fixa: {81000 - 86}")
-        elif Regime_MEI == 3:
-            print(f"Você ira pagar uma aliquota de 87 fixa: {81000 - 87}")
-        elif Regime_MEI == 4:
-            print(f"Você ira pagar uma aliquota no máximo 200 fixa: {81000 - 200}")
-        elif valor_bruto_anual > 81000:
-            print("Você ultrapassou o limite de faturamento do MEI, procure um contador para migrar para outro regime tributário")
+        aliquota = 0.275
+        deducao = 22000.0
+
+    imposto = max(0.0, base_calculo * aliquota - deducao)
+    receita_liquida = max(0.0, valor_bruto - imposto - previdencia)
+
+    return {
+        "base_calculo": base_calculo,
+        "aliquota": aliquota * 100,
+        "deducao_fixa": deducao,
+        "imposto": imposto,
+        "receita_liquida": receita_liquida,
+        "deducoes_usadas": deducoes,
+        "deducao_dependentes": deducao_dependente,
+    }
+
+
+def calc_mei(valor_bruto, atividade):
+    limite_mei = 81000.0
+    contribuicoes = {
+        1: 82.0,
+        2: 86.0,
+        3: 87.0,
+        4: 200.0,
+    }
+    if valor_bruto > limite_mei:
+        return {
+            "valido": False,
+            "limite": limite_mei,
+        }
+
+    contribuicao_anual = contribuicoes.get(atividade, 0.0) * 12
+    receita_liquida = max(0.0, valor_bruto - contribuicao_anual)
+    return {
+        "valido": True,
+        "contribuicao_mensal": contribuicoes.get(atividade, 0.0),
+        "contribuicao_anual": contribuicao_anual,
+        "receita_liquida": receita_liquida,
+        "limite": limite_mei,
+    }
+
+
+def calc_simples(valor_bruto, anexo):
+    tabelas = {
+        1: [
+            (180000.0, 0.04, 0.0),
+            (360000.0, 0.073, 5940.0),
+            (720000.0, 0.095, 13860.0),
+            (1800000.0, 0.107, 22500.0),
+            (3600000.0, 0.143, 87300.0),
+            (4800000.0, 0.19, 378000.0),
+        ],
+        2: [
+            (180000.0, 0.045, 0.0),
+            (360000.0, 0.078, 5940.0),
+            (720000.0, 0.10, 13860.0),
+            (1800000.0, 0.112, 22500.0),
+            (3600000.0, 0.147, 85500.0),
+            (4800000.0, 0.30, 720000.0),
+        ],
+        3: [
+            (180000.0, 0.06, 0.0),
+            (360000.0, 0.112, 9360.0),
+            (720000.0, 0.135, 17640.0),
+            (1800000.0, 0.16, 35640.0),
+            (3600000.0, 0.21, 125640.0),
+            (4800000.0, 0.33, 648000.0),
+        ],
+        4: [
+            (180000.0, 0.045, 0.0),
+            (360000.0, 0.09, 8100.0),
+            (720000.0, 0.102, 12420.0),
+            (1800000.0, 0.14, 39780.0),
+            (3600000.0, 0.22, 183780.0),
+            (4800000.0, 0.33, 828000.0),
+        ],
+        5: [
+            (180000.0, 0.155, 0.0),
+            (360000.0, 0.18, 4500.0),
+            (720000.0, 0.195, 9900.0),
+            (1800000.0, 0.205, 17100.0),
+            (3600000.0, 0.23, 62100.0),
+            (4800000.0, 0.305, 540000.0),
+        ],
+    }
+
+    if anexo not in tabelas:
+        return None
+
+    for limite, aliquota_nominal, parcela_deduzir in tabelas[anexo]:
+
+        if valor_bruto <= limite:
+
+            # Fórmula oficial do Simples Nacional
+            aliquota_efetiva = (
+                (valor_bruto * aliquota_nominal) - parcela_deduzir
+            ) / valor_bruto
+
+            imposto = valor_bruto * aliquota_efetiva
+
+            receita_liquida = valor_bruto - imposto
+
+            return {
+                "aliquota_nominal": aliquota_nominal * 100,
+                "aliquota_efetiva": aliquota_efetiva * 100,
+                "parcela_deduzir": parcela_deduzir,
+                "imposto": imposto,
+                "receita_liquida": receita_liquida,
+                "limite_faixa": limite,
+            }
+
+    return None
+
+
+def main():
+    print("=== Calculadora tributaria simplificada ===")
+    regime = ask_int("Digite 1 para Pessoa Fisica, 2 para MEI ou 3 para Simples Nacional: ", 1, 3)
+
+    if regime == 1:
+        valor_bruto_anual = ask_float("Quanto voce ganha anualmente? R$ ")
+        previdencia = ask_float("Quanto voce paga de contribuicao previdenciaria anual? R$ ")
+        dependentes = ask_int("Quantos dependentes voce quer deduzir? ", 0)
+        pensao_alimenticia = ask_float("Quanto voce paga de pensao alimenticia anual? R$ ")
+
+        resultado = calc_irpf(valor_bruto_anual, previdencia, dependentes, pensao_alimenticia)
+        print("\n--- Resultado IRPF ---")
+        print(f"Base de calculo apos deduçoes: R$ {resultado['base_calculo']:.2f}")
+        print(f"Deduçoes totais: R$ {resultado['deducoes_usadas']:.2f}")
+        print(f"  - Previdncia: R$ {previdencia:.2f}")
+        print(f"  - Dependentes: R$ {resultado['deducao_dependentes']:.2f} ({dependentes} dependentes)")
+        print(f"  - Pensao alimentcia: R$ {pensao_alimenticia:.2f}")
+        print(f"Aliquota efetiva: {resultado['aliquota']:.1f}%")
+        print(f"Deducao fixa na tabela: R$ {resultado['deducao_fixa']:.2f}")
+        print(f"Imposto devido: R$ {resultado['imposto']:.2f}")
+        print(f"Receita liquida aproximada: R$ {resultado['receita_liquida']:.2f}")
+
+    elif regime == 2:
+        atividade = ask_int(
+            "Digite 1 para comercio, 2 para serviços, 3 para comercio + serviços, 4 para caminhoneiro: ",
+            1,
+            4,
+        )
+        valor_bruto_anual = ask_float("Quanto voce ganha anualmente? R$ ")
+        resultado = calc_mei(valor_bruto_anual, atividade)
+
+        if not resultado["valido"]:
+            print("\nVoce ultrapassou o limite do MEI. Procure um contador para migrar para outro regime.")
+            print(f"Limite maximo do MEI: R$ {resultado['limite']:.2f}")
         else:
-                print("error")
+            print("\n--- Resultado MEI ---")
+            print(f"Contribuiçao mensal aproximada: R$ {resultado['contribuicao_mensal']:.2f}")
+            print(f"Contribuiçao anual aproximada: R$ {resultado['contribuicao_anual']:.2f}")
+            print(f"Receita liquida aps contribuiçao: R$ {resultado['receita_liquida']:.2f}")
+            print(f"Limite maximo do MEI: R$ {resultado['limite']:.2f}")
+
     else:
-        print("error")
-elif Regime == 3:
-    CNAE= int(input("Qual seu anexo do simples nacional? Digite 1 para anexo I, 2 para anexo II, 3 para anexo III, 4 para anexo IV e 5 para anexo V: "))
-    if CNAE == 1:
-        valor_bruto_anual = int(input("quanto você ganha anualmente?: "))
-        if valor_bruto_anual <= 180000:
-            print(f"Você ira pagar uma aliquota de 4% fixa: {valor_bruto_anual - valor_bruto_anual*4/100}")
-        elif valor_bruto_anual > 180000 and valor_bruto_anual <= 360000:
-            print(f"Você ira pagar uma aliquota de 7,8% fixa: {valor_bruto_anual - valor_bruto_anual*7.8/100}")
-        elif valor_bruto_anual > 360000 and valor_bruto_anual <= 720000:
-            print(f"Você ira pagar uma aliquota de 10% fixa: {valor_bruto_anual - valor_bruto_anual*10/100}")
-        elif valor_bruto_anual > 720000 and valor_bruto_anual <= 1800000:
-            print(f"Você ira pagar uma aliquota de 11,2% fixa: {valor_bruto_anual - valor_bruto_anual*11.2/100}")
-        elif valor_bruto_anual > 1800000 and valor_bruto_anual <= 3600000:
-            print(f"Você ira pagar uma aliquota de 14,7% fixa: {valor_bruto_anual - valor_bruto_anual*14.7/100}")
-        elif valor_bruto_anual > 3600000 and valor_bruto_anual <= 4800000:
-            print(f"Você ira pagar uma aliquota de 30% fixa: {valor_bruto_anual - valor_bruto_anual*30/100}")
+        anexo = ask_int(
+            "Qual seu anexo do Simples Nacional? Digite 1 para I, 2 para II, 3 para III, 4 para IV ou 5 para V: ",
+            1,
+            5,
+        )
+        valor_bruto_anual = ask_float("Quanto voce ganha anualmente? R$ ")
+        resultado = calc_simples(valor_bruto_anual, anexo)
+
+        if resultado is None:
+            print("Anexo invalido para o Simples Nacional.")
         else:
-            print("error")
-    elif CNAE == 2:
-        valor_bruto_anual = int(input("quanto você ganha anualmente?: "))
-        if valor_bruto_anual <= 180000:
-            print(f"Você ira pagar uma aliquota de 4,5% fixa: {valor_bruto_anual - valor_bruto_anual*4.5/100}")
-        elif valor_bruto_anual > 180000 and valor_bruto_anual <= 360000:
-            print(f"Você ira pagar uma aliquota de 7,8% fixa: {valor_bruto_anual - valor_bruto_anual*7.8/100}")
-        elif valor_bruto_anual > 360000 and valor_bruto_anual <= 720000:
-            print(f"Você ira pagar uma aliquota de 10% fixa: {valor_bruto_anual - valor_bruto_anual*10/100}")
-        elif valor_bruto_anual > 720000 and valor_bruto_anual <= 1800000:
-            print(f"Você ira pagar uma aliquota de 11,2% fixa: {valor_bruto_anual - valor_bruto_anual*11.2/100}")
-        elif valor_bruto_anual > 1800000 and valor_bruto_anual <= 3600000:
-            print(f"Você ira pagar uma aliquota de 14,7% fixa: {valor_bruto_anual - valor_bruto_anual*14.7/100}")
-        elif valor_bruto_anual > 3600000 and valor_bruto_anual <= 4800000:
-            print(f"Você ira pagar uma aliquota de 30% fixa: {valor_bruto_anual - valor_bruto_anual*30/100}")
-        else:
-            print("error")
-    elif CNAE == 3:
-        valor_bruto_anual = int(input("quanto você ganha anualmente?: "))
-        if valor_bruto_anual <= 180000:
-            print(f"Você ira pagar uma aliquota de 6% fixa: {valor_bruto_anual - valor_bruto_anual*6/100}")
-        elif valor_bruto_anual > 180000 and valor_bruto_anual <= 360000:
-            print(f"Você ira pagar uma aliquota de 11,2% fixa: {valor_bruto_anual - valor_bruto_anual*11.2/100}")
-        elif valor_bruto_anual > 360000 and valor_bruto_anual <= 720000:
-            print(f"Você ira pagar uma aliquota de 13,5% fixa: {valor_bruto_anual - valor_bruto_anual*13.5/100}")
-        elif valor_bruto_anual > 720000 and valor_bruto_anual <= 1800000:
-            print(f"Você ira pagar uma aliquota de 16% fixa: {valor_bruto_anual - valor_bruto_anual*16/100}")
-        elif valor_bruto_anual > 1800000 and valor_bruto_anual <= 3600000:
-            print(f"Você ira pagar uma aliquota de 21% fixa: {valor_bruto_anual - valor_bruto_anual*21/100}")
-        elif valor_bruto_anual > 3600000 and valor_bruto_anual <= 4800000:
-            print(f"Você ira pagar uma aliquota de 33% fixa: {valor_bruto_anual - valor_bruto_anual*33/100}")
-        else:
-            print("error")
-    elif CNAE == 4:
-        valor_bruto_anual = int(input("quanto você ganha anualmente?: "))
-        if valor_bruto_anual <= 180000:
-            print(f"Você ira pagar uma aliquota de 4,5% fixa: {valor_bruto_anual - valor_bruto_anual*4.5/100}")
-        elif valor_bruto_anual > 180000 and valor_bruto_anual <= 360000:
-            print(f"Você ira pagar uma aliquota de 9% fixa: {valor_bruto_anual - valor_bruto_anual*9/100}")
-        elif valor_bruto_anual > 360000 and valor_bruto_anual <= 720000:
-            print(f"Você ira pagar uma aliquota de 10,2% fixa: {valor_bruto_anual - valor_bruto_anual*10.2/100}")
-        elif valor_bruto_anual > 720000 and valor_bruto_anual <= 1800000:
-            print(f"Você ira pagar uma aliquota de 14% fixa: {valor_bruto_anual - valor_bruto_anual*14/100}")
-        elif valor_bruto_anual > 1800000 and valor_bruto_anual <= 3600000:
-            print(f"Você ira pagar uma aliquota de 22% fixa: {valor_bruto_anual - valor_bruto_anual*22/100}")
-        elif valor_bruto_anual > 3600000 and valor_bruto_anual <= 4800000:
-            
-            print(f"Você ira pagar uma aliquota de 33% fixa: {valor_bruto_anual - valor_bruto_anual*33/100}")
-        else:
-            print("error")
-    elif CNAE == 5:
-        valor_bruto_anual = int(input("quanto você ganha anualmente?: "))
-        if valor_bruto_anual <= 180000:
-            print(f"Você ira pagar uma aliquota de 15,5% fixa: {valor_bruto_anual - valor_bruto_anual*15.5/100}")
-        elif valor_bruto_anual > 180000 and valor_bruto_anual <= 360000:
-            print(f"Você ira pagar uma aliquota de 18% fixa: {valor_bruto_anual - valor_bruto_anual*18/100}")
-        elif valor_bruto_anual > 360000 and valor_bruto_anual <= 720000:
-            print(f"Você ira pagar uma aliquota de 19,5% fixa: {valor_bruto_anual - valor_bruto_anual*19.5/100}")
-        elif valor_bruto_anual > 720000 and valor_bruto_anual <= 1800000:
-            print(f"Você ira pagar uma aliquota de 20,5% fixa: {valor_bruto_anual - valor_bruto_anual*20.5/100}")
-        elif valor_bruto_anual > 1800000 and valor_bruto_anual <= 3600000:
-            print(f"Você ira pagar uma aliquota de 23% fixa: {valor_bruto_anual - valor_bruto_anual*23/100}")
-        elif valor_bruto_anual > 3600000 and valor_bruto_anual <= 4800000:
-            print(f"Você ira pagar uma aliquota de 30,5% fixa: {valor_bruto_anual - valor_bruto_anual*30.5/100}")
-        else:
-            print("error")
-    else:
-        print("error")
-else:
-    print("error")
-        
+            print("\n--- Resultado Simples Nacional ---")
+            print(f"Anexo: {anexo}")
+            print(f"Receita bruta anual: R$ {valor_bruto_anual:.2f}")
+            print(f"Aliquota nominal: {resultado['aliquota_nominal']:.2f}%")
+            print(f"Aliquota efetiva: {resultado['aliquota_efetiva']:.2f}%")
+            print(f"Parcela a deduzir: R$ {resultado['parcela_deduzir']:.2f}")
+            print(f"Imposto devido: R$ {resultado['imposto']:.2f}")
+            print(f"Receita liquida aproximada: R$ {resultado['receita_liquida']:.2f}")
 
+if __name__ == "__main__":
+    main()
 
-
-
-
-
-
-##Anexo I: Comércio, com alíquotas que variam de 4% a 19%. 
-
-##Anexo II: Indústria, com alíquotas que variam de 4,5% a 30%. 
-
-##Anexo III: Prestadores de serviços, com alíquotas que variam de 6% a 15,5%. 
-
-##Anexo IV: Serviços com contribuição previdenciária patronal, com alíquotas que variam de 4,5% a 15,5%. 
-
-##Anexo V: Serviços intelectuais, com alíquotas que variam de 15,5% a 33%. 
-##Anexo I: Comércio, com alíquotas que variam de 4% a 19%. 
-##Faixa	Receita Bruta Total em 12 meses	Alíquota	Valor a Deduzir (em R$)
-##1ª Faixa	Até R$ 180.000,00	4,5%	0
-##2ª Faixa	De R$ 180.000,01 a R$ 360.000,00	7,8%	R$ 5.940,00
-##3ª Faixa	De R$ 360.000,01 a R$ 720.000,00	10%	R$ 13.860,00
-##4ª Faixa	De R$ 720.000,01 a R$ 1.800.000,00	11,2%	R$ 22.500,00
-##5ª Faixa	De R$ 1.80０.０００,０１ a R$ 3.6００.０００,００	14,7%	R$ 85.5００,００
-##6ª Faixa	De R$ 3.6００.０００,０１ a R$ 4.8００.０００,００	3₀%	R$ 7２₀.₀₀₀,₀₀
-
-##Anexo II: Indústria, com alíquotas que variam de 4,5% a 30%. 
-##Faixa	Receita Bruta Total em 12 meses	Alíquota	Valor a Deduzir (em R$)
-##1ª Faixa	Até R$ 180.000,00	4,5%	0
-##2ª Faixa	De R$ 180.000,01 a R$ 360.000,00	7,8%	R$ 5.940,00
-##3ª Faixa	De R$ 360.000,01 a R$ 720.000,00	10%	R$ 13.860,00
-##4ª Faixa	De R$ 720.000,01 a R$ 1.800.00０,００	11,2%	R$ 22.5００,００
-##5ª Faixa	De R$ 1.8００.０００,０１ a R$ 3.6００.０００,００	14,7%	R$ 85.5００,００
-##6ª Faixa	De R$ 3.6００.₀₀₀,₀１ a R$ 4.8₀₀.₀₀₀,₀₀	3₀%	R$ 7２₀.₀₀₀,₀₀
-
-##Anexo III: Indústria, com alíquotas que variam de 4,5% a 30%.
-##Faixa	Receita Bruta Total em 12 meses	Alíquota	Valor a Deduzir (em R$)
-##1ª Faixa	Até R$ 180.000,00	6%	0
-##2ª Faixa	De R$ 180.000,01 a R$ 360.000,00	11,2%	R$ 9.360,00
-##3ª Faixa	De R$ 360.000,01 a R$ 720.000,00	13,5%	R$ 17.640,00
-##4ª Faixa	De R$ 720.000,01 a R$ 1.800.000,00	16%	R$ 35.640,00
-##5ª Faixa	De R$ 1.800.000,01 a R$ 3.600.000,00	21%	R$ 125.640,00
-##6ª Faixa	De R$ 3.600.000,01 a R$ 4.800.000,00	33%	R$ 648.000,00
-
-##Anexo IV: Serviços com contribuição previdenciária patronal, com alíquotas que variam de 4,5% a 15,5%.
-##Faixa	Receita Bruta Total em 12 meses	Alíquota	Valor a Deduzir (em R$)
-##1ª Faixa	Até R$ 180.000,00	4,5%	0
-##2ª Faixa	De R$ 180.000,01 a R$ 360.000,00	9%	R$ 8.100,00
-##3ª Faixa	De R$ 360.000,01 a R$ 720.000,00	10,2%	R$ 12.420,00
-##4ª Faixa	De R$ 720.000,01 a R$ 1.800.000,00	14%	R$ 39.780,00
-##5ª Faixa	De R$ 1.800.000,01 a R$ 3.600.000,00	22%	R$ 183.780,00
-##6ª Faixa	De R$ 3.600.000,01 a R$ 4.800.000,00	33%	R$ 828.000,00
-
-
-##Anexo V: Serviços intelectuais, com alíquotas que variam de 15,5% a 33%.
-##Faixa	Receita Bruta Total em 12 meses	Alíquota	Valor a Deduzir (em R$)"
-##1ª Faixa	Até R$ 180.000,00	15,5%	0"
-##2ª Faixa	De 180.000,01 a 360.000,00	18%	R$ 4.500,00
-##3ª Faixa	De 360.000,01 a 720.000,00	19,5%	R$ 9.900,00
-##4ª Faixa	De 720.000,01 a 1.800.000,00	20,5%	R$ 17.100,00
-##5ª Faixa	De 1.800.000,01 a 3.600.000,00	23%	R$ 62.100,00
-##6ª Faixa	De 3.600.000,01 a 4.800.000,00	30,50%	R$ 540.000,00"
-
-##ignorar valor a deduzir
 
